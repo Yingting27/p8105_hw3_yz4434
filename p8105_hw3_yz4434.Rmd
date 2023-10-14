@@ -89,7 +89,12 @@ nhanes_accel =
       cols(
         `SEQN` = col_character() 
 )) |> 
-  janitor::clean_names()
+  janitor::clean_names() |> 
+  pivot_longer(
+    min1:min1440,
+    names_to = "time",
+    values_to = "mims"
+  )
 ```
 
 * covar data sets
@@ -114,11 +119,62 @@ nhanes_covar =
       education,
       1 ~ "Less than high school",
       2 ~ "High school equivalent",
-      3 ~ "More than high school"))
+      3 ~ "More than high school")) |> 
+  mutate(education = forcats::fct_relevel(education, c("Less than high school","High school equivalent","More than high school")))
 ```
+
+* Produce a reader-friendly table for the number of men and women in each education category, and create a visualization of the age distributions for men and women in each education category. Comment on these items.
+
+```{r}
+sex_edu = nhanes_covar |>  
+  count(education,sex) |> 
+    pivot_wider(
+    names_from =sex,
+    values_from= n
+)
+knitr::kable
+
+
+vis_age = nhanes_covar|>
+  ggplot(aes(x = sex, y = age, color = sex ))+geom_boxplot()+ facet_grid(.~ education)
+  
+
+```
+According to the output, we can see that in the level of high school equivalent, there are 23 female and 35 male;in the level of less than high school, there are 28 female 27 male; in the level of more than high school, there are 59 female and 56 male. Based on the distribution of age 
 
 * merge datasets
 ```{r}
 merge_data = left_join(nhanes_covar,nhanes_accel,by = "seqn")
 ```
+
+* Traditional analyses of accelerometer data focus on the total activity over the day. Using your tidied dataset, aggregate across minutes to create a total activity variable for each participant. Plot these total activities (y-axis) against age (x-axis); your plot should compare men to women and have separate panels for each education level. Include a trend line or a smooth to illustrate differences. Comment on your plot.
+```{r}
+merge_aggr = merge_data |> 
+  group_by(seqn,sex,education,age) |> 
+  summarize(total_activities = sum(mims))
+  
+plot_total = merge_aggr |> 
+  ggplot(aes(x = age, y = total_activities, color = sex)) +
+  geom_point() + geom_smooth() +
+  facet_grid(.~ education) +
+  labs(
+    x = "Age",
+    y ="Total activities",
+    color = "Sex"
+  )
+```
+** Comments: according to the plots, we can see that all three panels of line smooth shows decreasing tendency of total activities, with the increase of age. The level of more than high school education shows a kind of stable trend with slight decrease from the age of 20 to 80 in both men and women, however, there are obvious decreasing trends in the education levels of high school equivalent and less than high school. To be more specific, in the level of less than high school, women and men have similar trend with the peak at the age of 20, and have a slight increase between 50 and 60 years old, then suddenly drop to the bottom level. In the level of high school equivalent, women have higher total activities than men in general. At the age of 40, both men and women get the highest numbers of total activities and have a significant decrease to the lowest level at the age of 40 and 60, remaining this level at the age of 80. In the level of more than high school education, women have a higher total activities trend than men. There is a stable trend between the age of 20 and 60, and slight decreasing during the age of 80.
+
+
+* Accelerometer data allows the inspection activity over the course of the day. Make a three-panel plot that shows the 24-hour activity time courses for each education level and use color to indicate sex. Describe in words any patterns or conclusions you can make based on this graph; including smooth trends may help identify differences.
+```{r}
+mins_plot = merge_data |> 
+  ggplot(aes(x = time, y = mims, color = sex)) + 
+  geom_point() + geom_smooth(aes(group = sex))+ 
+  facet_grid(. ~ education) +
+  labs(x = "Minute of the day",
+       y= "MIMS values for each minute of a 24-hour day starting at midnight",
+       color = "Sex") 
+```
+
 
