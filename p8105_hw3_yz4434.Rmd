@@ -145,7 +145,7 @@ brfss = brfss_smart2010 |>
 ```
 
 
-# In 2002, which states were observed at 7 or more locations? What about in 2010?
+## In 2002, which states were observed at 7 or more locations? What about in 2010?
 
 ```{r}
 brfss_2002 = brfss |> 
@@ -161,11 +161,11 @@ brfss_2010 = brfss |>
   filter(n_obs >= 7)
 ```
 
-In 2002, **`r print(pull(brfss_2002,state))`** were observed at 7 or more locations.
-In 2010, **`r print(pull(brfss_2010,state))`** were observed at 14 or more locations.
+In 2002, "CT" "FL" "MA" "NC" "NJ" "PA" were observed at 7 or more locations.
+In 2010, "CA" "CO" "FL" "MA" "MD" "NC" "NE" "NJ" "NY" "OH" "PA" "SC" "TX" "WA" were observed at 14 or more locations.
 
 
-# Construct a dataset
+## Construct a dataset
 
 ```{r}
 brfss_conduct = brfss |> 
@@ -173,27 +173,43 @@ brfss_conduct = brfss |>
   group_by(year,state) |> 
   summarise(
     mean_value = mean(data_value,na.rm = TRUE),.groups = "drop") |> 
-  ggplot(aes(x = year, y = mean_value, color = state))+ geom_line()
+  ggplot(aes(x = year, y = mean_value, color = state))+ geom_line() +
+  labs(
+    x = "Year",
+    y = "Mean value",
+    color = "state",
+    title = "Average value over time for each state"
+  )
+brfss_conduct
   
 ```
 
+** Comments: From this plot, we can see that most of the states have average values range from 167 to 27. Most of trends from different states have up and down values from 2002 to 2010, which shows jagged lines like "spaghetti". The highest mean data value over time are CA and CO, which is around 27, with the lowest mean data value like WV (below 15 during the year 2004).
 
-# Make a two-panel plot showing
+## Make a two-panel plot showing
 
 
 ```{r}
 brfss_panel= brfss |> 
   filter(year %in% c("2006", "2010")) |> 
   filter(state == "NY") |> 
-  ggplot(aes(x = response, y = data_value)) + geom_boxplot()+
-  facet_grid(.~ year)
-  
+  ggplot(aes(x = response, y = data_value, color = response)) + geom_boxplot()+
+  facet_grid(.~ year) + 
+  labs(
+    x = "Response",
+    y = "Data value",
+    color = "response",
+    title = "Data value distribution for response in NY State in 2006 and 2010"
+  )
+
+brfss_panel
 ```
+** Comments:this two-panel plot shows the distribution medians of data value in different response group rank in 2006 and 2010.They show quite similar distribution patters, but we can see that during the year 2010, the spread of data value in the response of "Fair" and "Very good" become more wider, with more condensed data value in response of "Poor" and "Excellent".
 
 
-## Question 3
+# Question 3
 
-# Load, tidy, merge, and otherwise organize the data sets
+## Load, tidy, merge, and otherwise organize the data sets
 
 * accel data sets
 ```{r}
@@ -245,14 +261,14 @@ sex_edu = nhanes_covar |>
     pivot_wider(
     names_from =sex,
     values_from= n
-)
-knitr::kable
-
+) |> 
+knitr::kable()
+sex_edu
 
 vis_age = nhanes_covar|>
   ggplot(aes(x = sex, y = age, color = sex ))+geom_boxplot()+ facet_grid(.~ education)
   
-
+vis_age
 ```
 According to the output, we can see that in the level of high school equivalent, there are 23 female and 35 male;in the level of less than high school, there are 28 female 27 male; in the level of more than high school, there are 59 female and 56 male. 
 
@@ -277,8 +293,10 @@ plot_total = merge_aggr |>
   labs(
     x = "Age",
     y ="Total activities",
-    color = "Sex"
+    color = "Sex",
+    title = "Total activities by sex, education and age"
   )
+plot_total
 ```
 ** Comments: according to the plots, we can see that all three panels of line smooth shows decreasing tendency of total activities, with the increase of age. The level of more than high school education shows a kind of stable trend with slight decrease from the age of 20 to 80 in both men and women, however, there are obvious decreasing trends in the education levels of high school equivalent and less than high school. To be more specific, in the level of less than high school, women and men have similar trend with the peak at the age of 20, and have a slight increase between 50 and 60 years old, then suddenly drop to the bottom level. In the level of high school equivalent, women have higher total activities than men in general. At the age of 40, both men and women get the highest numbers of total activities and have a significant decrease to the lowest level at the age of 40 and 60, remaining this level at the age of 80. In the level of more than high school education, women have a higher total activities trend than men. There is a stable trend between the age of 20 and 60, and slight decreasing during the age of 80.
 
